@@ -42,17 +42,47 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
-  background: var(--cream);
+  background:
+    radial-gradient(680px 420px at 12% -6%, rgba(200,30,30,.09), transparent 60%),
+    radial-gradient(560px 380px at 108% 8%, rgba(200,155,60,.12), transparent 60%),
+    var(--cream);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  position: relative;
 }
+
+/* тончайшее зерно поверх фона — убирает "пластиковую" плоскость больших заливок */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
+#root, body > div { position: relative; z-index: 1; }
+
+::selection { background: var(--gold-soft); color: var(--ink); }
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--gold), var(--ember));
+  border-radius: 999px;
+  border: 3px solid var(--cream);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ember); }
+html { scrollbar-color: var(--gold) var(--cream); scrollbar-width: thin; }
 
 a { color: inherit; }
 
@@ -89,6 +119,23 @@ h1.title::after {
   border-radius: 2px;
 }
 
+/* золотой ромб-маркер перед заголовками смысловых блоков (категории меню) */
+.block > .title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.block > .title::before {
+  content: "";
+  display: inline-block;
+  width: 9px; height: 9px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--gold), var(--ember));
+  transform: rotate(45deg);
+  border-radius: 2px;
+  box-shadow: 0 0 0 4px rgba(200,155,60,.14);
+}
+
 .subtitle { font-family: var(--font-body) !important; color: #6B5F55 !important; }
 
 /* ==========================================================================
@@ -102,6 +149,16 @@ h1.title::after {
   position: sticky;
   top: 0;
   z-index: 100;
+  backdrop-filter: saturate(1.15);
+}
+
+.navbar::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold) 50%, transparent);
+  opacity: .75;
 }
 
 .navbar-brand { align-items: center; }
@@ -152,7 +209,22 @@ h1.title::after {
   border-radius: var(--radius-s) !important;
   box-shadow: 0 6px 16px -6px rgba(200,30,30,.55);
   transition: transform .18s var(--ease-out), box-shadow .18s var(--ease-out), filter .18s;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
 }
+
+.button.is-danger::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: -60%;
+  width: 40%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: skewX(-20deg);
+  transition: left .55s var(--ease-out);
+  z-index: 1;
+}
+.button.is-danger:hover::before { left: 120%; }
 
 .button.is-danger:hover { filter: brightness(1.06); box-shadow: 0 10px 22px -8px rgba(200,30,30,.6); }
 .button.is-danger:active { transform: scale(.97); }
@@ -182,15 +254,62 @@ h1.title::after {
   border-radius: var(--radius-m) !important;
   border: 1px solid var(--cream-deep);
   box-shadow: var(--shadow-card);
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
   transition: transform .3s var(--ease-out), box-shadow .3s var(--ease-out), border-color .3s;
+  animation: cardRise .5s var(--ease-out) both;
+}
+
+.card-image { overflow: hidden; border-radius: var(--radius-m) var(--radius-m) 0 0; position: relative; }
+
+/* перфорация "билета" на стыке фото и цены — фирменный приём */
+.card-image::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 16px;
+  background:
+    radial-gradient(circle 8px at 0 0, transparent 8px, #fff 8.5px) top left / 24px 16px repeat-x,
+    linear-gradient(to bottom, transparent 50%, #fff 50%) bottom / 100% 8px no-repeat;
+  z-index: 2;
+}
+
+.card:nth-child(1) { animation-delay: .02s; }
+.card:nth-child(2) { animation-delay: .08s; }
+.card:nth-child(3) { animation-delay: .14s; }
+.card:nth-child(4) { animation-delay: .2s; }
+.card:nth-child(n+5) { animation-delay: .24s; }
+
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
   box-shadow: var(--shadow-lift);
   border-color: transparent;
   cursor: pointer;
+}
+
+.card:hover::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius-m);
+  padding: 1.5px;
+  background: linear-gradient(135deg, var(--gold), var(--ember) 60%, var(--gold));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.card .card-content {
+  border-radius: 0 0 var(--radius-m) var(--radius-m);
+  background: #fff;
+  position: relative;
 }
 
 .card-image figure.image img {
@@ -203,13 +322,16 @@ h1.title::after {
   margin-bottom: 4px !important;
 }
 
-/* цена — латунная "чековая" типографика, фирменный приём */
+/* цена — латунная "чековая" типографика поверх перфорации, фирменный приём */
 .card .subtitle.is-6 {
   font-family: var(--font-mono) !important;
   font-weight: 600 !important;
   color: var(--ember) !important;
   font-size: 15px !important;
   letter-spacing: -.01em;
+  display: inline-block;
+  padding-left: 10px;
+  border-left: 2px dashed var(--gold-soft);
 }
 
 .card .button.is-dark {
@@ -234,6 +356,28 @@ h1.title::after {
   overflow: hidden;
   box-shadow: 0 30px 70px -20px rgba(0,0,0,.5);
   animation: sheetIn .38s var(--ease-out);
+  position: relative;
+}
+
+.modal-card::before, .modal-card::after,
+.modal-content::before, .modal-content::after {
+  content: "";
+  position: absolute;
+  width: 22px; height: 22px;
+  border: 2px solid var(--gold);
+  z-index: 5;
+  pointer-events: none;
+  opacity: .85;
+}
+.modal-card::before, .modal-content::before {
+  top: 10px; left: 10px;
+  border-right: none; border-bottom: none;
+  border-radius: 6px 0 0 0;
+}
+.modal-card::after, .modal-content::after {
+  top: 10px; right: 10px;
+  border-left: none; border-bottom: none;
+  border-radius: 0 6px 0 0;
 }
 
 @keyframes sheetIn {
@@ -352,7 +496,7 @@ h1.title::after {
    Отзывы — латунные звёзды
    ========================================================================== */
 
-.star-filled { color: var(--gold) !important; text-shadow: 0 1px 2px rgba(200,155,60,.35); }
+.star-filled { color: var(--gold) !important; text-shadow: 0 0 8px rgba(200,155,60,.5), 0 1px 2px rgba(200,155,60,.35); }
 .star { transition: transform .15s var(--ease-out), color .15s; }
 .star-picker:not(.star-picker--readonly) .star:hover { transform: scale(1.18); }
 
@@ -379,9 +523,11 @@ h1.title::after {
 }
 
 .menu-list a {
+  display: block;
+  background: transparent !important;
   border-radius: var(--radius-s);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--ink) !important;
   padding: 8px 12px;
   transition: background .2s, color .2s, padding-left .2s var(--ease-out);
 }
@@ -396,7 +542,20 @@ h1.title::after {
    Swiper — слайдер акций
    ========================================================================== */
 
-.swiper { border-radius: var(--radius-l); overflow: hidden; box-shadow: var(--shadow-lift); }
+.swiper { border-radius: var(--radius-l); overflow: hidden; box-shadow: var(--shadow-lift); position: relative; z-index: 1; }
+
+.row.mb-6 { position: relative; }
+
+.row.mb-6::before {
+  content: "";
+  position: absolute;
+  top: -60px; left: -80px;
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, rgba(200,30,30,.16), rgba(200,155,60,.08) 55%, transparent 70%);
+  filter: blur(10px);
+  z-index: 0;
+  pointer-events: none;
+}
 
 .swiper-button-next, .swiper-button-prev {
   color: #fff !important;
